@@ -1,0 +1,104 @@
+name: Test Build1
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths-ignore:
+      - '**.md'
+  release:
+    types:
+      - published
+
+jobs:
+  build:
+    name: Test ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: aarch64_cortex-a53
+            target: mvebu-cortexa53
+            runtime_test: false
+          - arch: aarch64_cortex-a72
+            target: mvebu-cortexa72
+            runtime_test: false
+          - arch: aarch64_generic
+            target: armsr-armv8
+            runtime_test: true
+          - arch: arm_cortex-a7_neon-vfpv4
+            target: ipq40xx-generic
+            runtime_test: false
+          - arch: arm_cortex-a9_vfpv3-d16
+            target: mvebu-cortexa9
+            runtime_test: false
+          - arch: arm_cortex-a15_neon-vfpv4
+            target: armsr-armv7
+            runtime_test: true
+          - arch: i386_pentium4
+            target: x86-generic
+            runtime_test: false
+          - arch: i386_pentium-mmx
+            target: x86-geode
+            runtime_test: true
+          - arch: mips_24kc
+            target: ath79-generic
+            runtime_test: true
+          - arch: mipsel_24kc
+            target: mt7621
+            runtime_test: false
+          - arch: riscv64_riscv64
+            target: sifiveu-generic
+            runtime_test: false
+          - arch: x86_64
+            target: x86-64
+            runtime_test: true
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Build Packages
+        uses: openwrt/gh-action-sdk@v7
+        env:
+          ARCH: ${{ matrix.arch }}
+          FEEDNAME: packages_ci
+          PACKAGES: cdnspeedtest
+          V: s
+
+      - name: Move Created Packages
+        run: |
+          mkdir -p artifacts
+          cp bin/packages/${{ matrix.arch }}/packages_ci/*.ipk artifacts/ || true
+
+      - name: Store Artifacts (Packages & Logs)
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.arch }}-${{ github.sha }}
+          path: |
+            artifacts/*.ipk
+            logs/
+
+      - name: Upload Packages for Release
+        uses: svenstaro/upload-release-action@v2
+        if: github.event_name == 'release'
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: artifacts/*.ipk
+          tag: ${{ github.ref }}
+          file_glob: true
+
+      - name: Register QEMU
+        if: matrix.runtime_test
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static binfmt-support
+          sudo update-binfmts --import
+
+      - name: Build and Test in Docker
+        if: matrix.runtime_test
+        run: |
+          docker build -t test-container --build-arg ARCH=${{ matrix.arch }} .github/workflows/
+          docker run --rm -v $GITHUB_WORKSPACE:/ci test-container
