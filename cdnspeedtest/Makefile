@@ -1,6 +1,4 @@
 # SPDX-License-Identifier: GPL-3.0-only
-#
-# Copyright (C) 2021-2023 ImmortalWrt.org
 
 include $(TOPDIR)/rules.mk
 
@@ -10,7 +8,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/XIU2/CloudflareSpeedTest/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=9e120c31dadad329b54b5d87047db70bf16b5d3b82c45ccfaac02522cdb92fdf  # 需要手动填写
+PKG_HASH:=9e120c31dadad329b54b5d87047db70bf16b5d3b82c45ccfaac02522cdb92fdf
 
 PKG_LICENSE:=GPL-3.0-only
 PKG_LICENSE_FILE:=LICENSE
@@ -23,31 +21,28 @@ PKG_USE_MIPS16:=0
 
 GO_PKG:=github.com/XIU2/CloudflareSpeedTest
 GO_PKG_LDFLAGS_X:=github.com/XIU2/CloudflareSpeedTest/version.Version=v$(PKG_VERSION)
+GO_PKG_TARGET_VARS += CGO_ENABLED=0
 
 include $(INCLUDE_DIR)/package.mk
-include $(INCLUDE_DIR)/golang.mk  # 确保正确包含 Golang 依赖
+include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
 
 define Package/cdnspeedtest
   SECTION:=net
   CATEGORY:=Network
-  TITLE:=Getting the fastest IPs to your network of CDN
+  TITLE:=Cloudflare Speed Test - Fastest CDN IP scanner
   URL:=https://github.com/XIU2/CloudflareSpeedTest
   DEPENDS:=$(GO_ARCH_DEPENDS) +ca-bundle
 endef
 
 define Package/cdnspeedtest/install
 	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
-	
+
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/CloudflareSpeedTest $(1)/usr/bin/cdnspeedtest
 
 	$(INSTALL_DIR) $(1)/usr/share/CloudflareSpeedTest
-	if [ -f "$(PKG_BUILD_DIR)/ip.txt" ]; then \
-		$(INSTALL_DATA) $(PKG_BUILD_DIR)/ip.txt $(1)/usr/share/CloudflareSpeedTest/; \
-	fi
-	if [ -f "$(PKG_BUILD_DIR)/ipv6.txt" ]; then \
-		$(INSTALL_DATA) $(PKG_BUILD_DIR)/ipv6.txt $(1)/usr/share/CloudflareSpeedTest/; \
-	fi
+	[ -f "$(PKG_BUILD_DIR)/ip.txt" ] && $(INSTALL_DATA) $(PKG_BUILD_DIR)/ip.txt $(1)/usr/share/CloudflareSpeedTest/
+	[ -f "$(PKG_BUILD_DIR)/ipv6.txt" ] && $(INSTALL_DATA) $(PKG_BUILD_DIR)/ipv6.txt $(1)/usr/share/CloudflareSpeedTest/
 endef
 
 $(eval $(call GoBinPackage,cdnspeedtest))
