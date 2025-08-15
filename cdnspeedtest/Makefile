@@ -3,12 +3,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=CloudflareSpeedTest
-PKG_VERSION:=2.2.5
+PKG_VERSION:=2.3.4
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/XIU2/CloudflareSpeedTest/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=9e120c31dadad329b54b5d87047db70bf16b5d3b82c45ccfaac02522cdb92fdf
+PKG_HASH:=2003440cc264b213eed55bd64939d2b270fd02b1f008d2b721debf01a88f4cb8
 
 PKG_LICENSE:=GPL-3.0-only
 PKG_LICENSE_FILE:=LICENSE
